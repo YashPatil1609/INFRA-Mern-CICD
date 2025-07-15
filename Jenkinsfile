@@ -75,7 +75,7 @@ pipeline{
                     dir('./Terraform'){
                         sh 'terraform init'
                         sh 'terraform apply -auto-approve'
-                        EC2-PUBLIC-IP = sh(script: "terraform output public-ip", returnStdout: true).trim()
+                        EC2_PUBLIC_IP = sh(script: "terraform output public-ip", returnStdout: true).trim()
                     }
                 }
             }
