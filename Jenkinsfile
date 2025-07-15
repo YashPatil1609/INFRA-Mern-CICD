@@ -65,33 +65,36 @@ pipeline{
             }
         }
 
-        stage("Infra Provisioning"){
-            environment{
-                AWS_ACCESS_KEY_ID = credentials('AWS-Access-key-id')
-                AWS_SECRET_ACCESS_KEY = credentials('AWS-Secret-Access-Key')
-            }
-            steps{
-                script{
-                    dir('./Terraform'){
-                        sh 'terraform init'
-                        sh 'terraform apply -auto-approve'
-                        EC2_PUBLIC_IP = sh(script: "terraform output public-ip", returnStdout: true).trim()
-                    }
-                }
-            }
+        stage("Infra Provisioning") {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'AWS-Access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS-Secret-Access-Key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                    dir('./Terraform') {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                    EC2_PUBLIC_IP = sh(script: "terraform output -raw public-ip", returnStdout: true).trim()
+                    env.EC2_PUBLIC_IP = EC2_PUBLIC_IP  // store in env for later stages
         }
+      }
+    }
+  }
+}
+
 
         stage("Deploying to the Server"){
             steps{
                 script{
                     sleep(time: 120, unit: 'SECONDS')
-                    echo "{$EC2-PUBLIC-IP}"
+                    echo "{$EC2_PUBLIC_IP}"
 
                     def shellCmd = "bash ./startup-script.sh ${FRONTEND_VERSION} ${BACKEND_VERSION}"
                     sshagent(['INFRA-Mern-CICD']){
-                        sh 'scp -o StrictHostKeyChecking=no startup-script.sh ec2-user@{EC2-PUBLIC-IP}:/home/ec2-user'
-                        sh 'scp -o StrictHostKeyChecking=no docker-compose.yml ec2-user@{EC2-PUBLIC-IP}:/home/ec2-user'
-                        sh "ssh -o StrictHostKeyChecking=no ec2-user@{EC2-PUBLIC-IP} ${shellCmd}"
+                        sh 'scp -o StrictHostKeyChecking=no startup-script.sh ec2-user@${EC2_PUBLIC_IP}:/home/ec2-user'
+                        sh 'scp -o StrictHostKeyChecking=no docker-compose.yml ec2-user@${EC2_PUBLIC_IP}:/home/ec2-user'
+                        sh "ssh -o StrictHostKeyChecking=no ec2-user@${EC2_PUBLIC_IP} ${shellCmd}"
                        
                             
                         
