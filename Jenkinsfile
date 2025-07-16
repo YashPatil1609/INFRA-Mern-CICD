@@ -92,7 +92,7 @@ pipeline{
 
                     def shellCmd = "bash ./startup-script.sh ${FRONTEND_VERSION} ${BACKEND_VERSION}"
                     sshagent(['INFRA-Mern-CICD']){
-                        sh 'scp -o StrictHostKeyChecking=no startup-script.sh ec2-user@${EC2_PUBLIC_IP}:/home/ec2-user'
+                        sh 'scp -o StrictHostKeyChecking=no entry-script.sh ec2-user@${EC2_PUBLIC_IP}:/home/ec2-user'
                         sh 'scp -o StrictHostKeyChecking=no docker-compose.yml ec2-user@${EC2_PUBLIC_IP}:/home/ec2-user'
                         sh "ssh -o StrictHostKeyChecking=no ec2-user@${EC2_PUBLIC_IP} ${shellCmd}"
                        
